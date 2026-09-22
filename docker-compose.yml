@@ -1,0 +1,10 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"      # 宿主机端口:容器端口，改左侧即可换端口
+    environment:
+      - DATA_DIR=/data   # SQLite 数据库与上传图片的存放目录
+    volumes:
+      - ./data:/data     # 数据持久化到宿主机 ./data
+    restart: unless-stopped

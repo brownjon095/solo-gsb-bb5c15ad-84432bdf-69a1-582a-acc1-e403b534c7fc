@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>图像标定与可复核测量</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>显微 / 工程照片可复核测量平台</h1>
+  <span id="header-status"></span>
+</header>
+<div id="layout">
+  <aside>
+    <section class="panel">
+      <h2>1. 图片</h2>
+      <input type="file" id="file-input" accept="image/*">
+      <ul id="image-list" class="item-list"></ul>
+    </section>
+
+    <section class="panel" id="panel-calib">
+      <h2>2. 标定（≥4 个已知点）</h2>
+      <div class="row">
+        <label>已有版本
+          <select id="calib-select"></select>
+        </label>
+        <button id="btn-delete-calib" class="small danger" title="删除选中的标定版本">删</button>
+      </div>
+      <p class="hint">在画布上点击添加标定点，然后在下表填写每个点对应的物理坐标。</p>
+      <table class="grid" id="calib-table">
+        <thead><tr><th>#</th><th>像素 x</th><th>像素 y</th><th>物理 X</th><th>物理 Y</th><th>权重</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="row">
+        <label>版本名 <input id="calib-name" value="v1" size="6"></label>
+        <label>单位 <input id="calib-unit" value="mm" size="5"></label>
+        <label>选点σ(px) <input id="pick-sigma" type="number" value="1" min="0" step="0.5" size="4"></label>
+      </div>
+      <div class="row">
+        <button id="btn-fit" class="primary">拟合并保存标定</button>
+        <button id="btn-clear-calib">清空点</button>
+      </div>
+      <div id="fit-summary"></div>
+      <table class="grid" id="residual-table">
+        <thead><tr><th>#</th><th>残差 dX</th><th>残差 dY</th><th>|残差|</th><th>重投影(px)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="panel" id="panel-measure">
+      <h2>3. 测量</h2>
+      <div class="row">
+        <button id="btn-mode-line">线段</button>
+        <button id="btn-mode-polygon">多边形</button>
+        <button id="btn-cancel-draft">取消</button>
+      </div>
+      <p class="hint" id="measure-hint">先完成标定，再开始测量。</p>
+      <div id="live-value" class="live"></div>
+      <div class="row">
+        <label>备注 <input id="measure-label" size="12"></label>
+        <button id="btn-save-measure" class="primary" disabled>保存测量</button>
+      </div>
+      <table class="grid" id="measure-table">
+        <thead><tr><th>备注</th><th>类型</th><th>结果</th><th>标定</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </aside>
+
+  <main>
+    <div id="canvas-wrap">
+      <canvas id="canvas"></canvas>
+      <div id="empty-tip">请先在左侧上传并选择一张图片</div>
+    </div>
+    <div id="statusbar">就绪</div>
+  </main>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
