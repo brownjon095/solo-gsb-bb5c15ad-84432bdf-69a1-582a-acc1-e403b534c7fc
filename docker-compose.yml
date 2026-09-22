@@ -1,0 +1,16 @@
+services:
+  web:
+    build: .
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - photo-measure-data:/data
+    environment:
+      DATA_DIR: /data
+      MAX_UPLOAD_MB: "${MAX_UPLOAD_MB:-50}"
+      DEFAULT_POINT_SIGMA: "${DEFAULT_POINT_SIGMA:-0.8}"
+      DEFAULT_ENDPOINT_SIGMA: "${DEFAULT_ENDPOINT_SIGMA:-0.8}"
+    restart: unless-stopped
+
+volumes:
+  photo-measure-data:

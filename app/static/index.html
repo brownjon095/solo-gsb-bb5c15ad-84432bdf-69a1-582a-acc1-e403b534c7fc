@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>可复核图像测量</title>
+<link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">📐 可复核图像测量 <span class="sub">透视标定 · 加权最小二乘 · 协方差不确定度</span></div>
+  <button id="navGallery" class="btn ghost">图片库</button>
+</header>
+
+<!-- 图片库 -->
+<section id="galleryView" class="view">
+  <div class="upload-card">
+    <h2>上传显微 / 工程照片</h2>
+    <form id="uploadForm">
+      <input type="file" id="fileInput" accept="image/*" required />
+      <input type="text" id="imgName" placeholder="名称（可选）" class="inp" />
+      <select id="imgUnit" class="inp">
+        <option value="mm" selected>mm</option>
+        <option value="um">µm</option>
+        <option value="m">m</option>
+        <option value="px">px</option>
+      </select>
+      <button class="btn primary" type="submit">上传</button>
+    </form>
+    <div id="uploadMsg" class="msg"></div>
+  </div>
+  <div id="galleryGrid" class="gallery-grid"></div>
+</section>
+
+<!-- 工作区 -->
+<section id="workView" class="view hidden">
+  <div class="workspace">
+    <div class="canvas-pane">
+      <div class="toolbar">
+        <div class="tool-group">
+          <button class="btn tool" data-mode="gcp">① 标定点</button>
+          <button class="btn tool" data-mode="line">② 线段/折线</button>
+          <button class="btn tool" data-mode="polygon">③ 多边形</button>
+          <button class="btn tool" data-mode="pan">✋ 平移</button>
+        </div>
+        <div class="tool-group">
+          <button id="zoomIn" class="btn">＋</button>
+          <button id="zoomOut" class="btn">－</button>
+          <button id="zoomFit" class="btn">适配</button>
+          <button id="zoom100" class="btn">1:1</button>
+        </div>
+        <div class="tool-group">
+          <button id="undoPoint" class="btn warn" title="撤销最后一个点">撤销点</button>
+          <button id="finishShape" class="btn" disabled>完成图形</button>
+          <button id="clearDraft" class="btn ghost">清除草稿</button>
+        </div>
+      </div>
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="canvas"></canvas>
+        <div id="crosshair" class="crosshair hidden"></div>
+      </div>
+      <div class="statusbar">
+        <span id="cursorPos">像素 —, —</span>
+        <span id="cursorWorld"></span>
+        <span id="modeHint" class="hint"></span>
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      <div class="tabs">
+        <button class="tab active" data-tab="calib">标定</button>
+        <button class="tab" data-tab="measure">测量结果</button>
+        <button class="tab" data-tab="saved">已保存</button>
+      </div>
+
+      <!-- 标定 -->
+      <div class="tabpane" data-tab="calib">
+        <div class="pane-head">
+          <h3 id="imgTitle">—</h3>
+          <span id="imgSize" class="dim"></span>
+        </div>
+        <div class="row">
+          <label>默认点量测 1σ（像素）</label>
+          <input type="number" id="defaultSigma" class="inp small" value="0.8" min="0.05" step="0.1" />
+        </div>
+        <div class="table-scroll">
+          <table class="gcp-table" id="gcpTable">
+            <thead>
+              <tr><th>#</th><th>名称</th><th>像素 x</th><th>像素 y</th><th>实际 X</th><th>实际 Y</th><th>σ</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="btn-row">
+          <button id="fitBtn" class="btn primary">加权拟合（≥4点）</button>
+          <button id="saveCalibBtn" class="btn" disabled>保存为新版本</button>
+        </div>
+        <div id="fitPanel" class="fit-panel hidden">
+          <div class="fit-summary" id="fitSummary"></div>
+          <div class="resid-scroll">
+            <table class="resid-table">
+              <thead><tr><th>点</th><th>图像残差(px)</th><th>ΔX</th><th>ΔY</th><th>实际残差</th><th>归一化</th></tr></thead>
+              <tbody id="residBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="versions">
+          <h4>标定版本</h4>
+          <div id="versionList" class="version-list"></div>
+        </div>
+      </div>
+
+      <!-- 测量结果 -->
+      <div class="tabpane hidden" data-tab="measure">
+        <div class="row">
+          <label>基于标定版本</label>
+          <select id="calibSelect" class="inp"></select>
+        </div>
+        <div class="row">
+          <label>端点量测 1σ（像素）</label>
+          <input type="number" id="endpointSigma" class="inp small" value="0.8" min="0.05" step="0.1" />
+        </div>
+        <label class="check"><input type="checkbox" id="includeCalibUnc" checked /> 不确定度计入标定误差</label>
+        <div id="liveResult" class="live-result">
+          <p class="dim">绘制线段或多边形后，这里实时显示长度 / 面积及 1σ 不确定度。</p>
+        </div>
+        <div class="btn-row">
+          <button id="saveMeasureBtn" class="btn primary" disabled>保存测量</button>
+        </div>
+      </div>
+
+      <!-- 已保存 -->
+      <div class="tabpane hidden" data-tab="saved">
+        <h4>已保存测量</h4>
+        <div id="measureList" class="measure-list"></div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<div id="toast" class="toast hidden"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
